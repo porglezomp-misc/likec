@@ -21,7 +21,7 @@ def emit_module(items):
 
     for item in items:
         if item[0] == 'struct':
-            struct = 'struct {name} {{\n{body}\n}}'.format(
+            struct = 'struct {name} {{\n{body}\n}};'.format(
                 name=item[1],
                 body='\n'.join(emit_typed_var(pair) + ';' for pair in item[2:]),
             )
@@ -70,14 +70,16 @@ def emit_statement(stmt):
             body='\n'.join(emit_statement(s) for s in stmt[2:]),
         )
     elif stmt[0] == 'while':
-        print('while', stmt[1], stmt[2:])
-        return ''
+        return 'while ({cond}) {{\n{body}\n}}'.format(
+            cond=emit_expr(stmt[1], False),
+            body='\n'.join(emit_statement(s) for s in stmt[2:]),
+        )
     elif stmt[0] == 'block!':
         return '{{{items}}}'.format('\n'.join(emit_statement(s) for s in stmt[1:]))
     elif stmt[0] == 'return':
-        return 'return {}'.format(emit_expr(stmt[1], False))
+        return 'return {};'.format(emit_expr(stmt[1], False))
     else:
-        return emit_expr(stmt) + ';'
+        return emit_expr(stmt, False) + ';'
 
 
 def emit_expr(expr, parenthesize=True):
@@ -100,10 +102,6 @@ def emit_expr(expr, parenthesize=True):
                 expr[0],
                 ', '.join(emit_expr(e, False) for e in expr[1:])
             )
-    return str(expr)
-
-
-def emit_call(expr):
     return str(expr)
 
 
@@ -164,7 +162,17 @@ code_sample = '''
      (let! (c int) b)
      (set! b (+ a b))
      (set! a c))
-   (return a)))
+   (return a))
+
+  (fn (mainloop (running bool)) void
+    (while running
+      (set! running false)))
+
+  (fn (peano_add (a int) (b int)) int
+    (while (> a 0)
+      (-- a)
+      (++ b))
+    (return b)))
 '''
 
 
