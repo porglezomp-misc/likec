@@ -15,14 +15,63 @@ def emit_module(items):
         output.append('{ret} {name}({args});'.format(
             ret=decl[2],
             name=decl[1][0],
-            args=', '.join('{} {}'.format(ty, name) for name, ty in decl[1][1:])
+            args=', '.join(emit_typed_var(pair) for pair in decl[1][1:])
         ))
     output.append('')
 
     for item in items:
-        print(item)
+        if item[0] == 'struct':
+            struct = 'struct {name} {{\n{body}\n}}'.format(
+                name=item[1],
+                body='\n'.join('  ' + emit_typed_var(pair) + ';' for pair in item[2:]),
+            )
+            output.append(struct)
+        elif item[0] == 'fn':
+            print(item)
+            fn = '{ret} {name}({args}) {{\n{body}\n}}'.format(
+                ret = item[2],
+                name = item[1][0],
+                args = ', '.join(emit_typed_var(pair) for pair in item[1][1:]),
+                body = '\n'.join(emit_statement(stmt) for stmt in item[3:])
+            )
+            output.append(fn)
+
+        output.append('')
 
     return '\n'.join(output)
+
+
+def emit_statement(stmt):
+    return str(stmt)
+
+
+def emit_expr(expr):
+    return str(expr)
+
+
+def emit_call(expr):
+    return str(expr)
+
+
+def emit_typed_var(pair):
+    """
+    Return a type and name declaration.
+
+    Examples
+    >>> emit_typed_var(['foo', 'int'])
+    'int foo'
+    >>> emit_typed_var(['bar', ['ptr!', 'char']])
+    'char *bar'
+
+    >> emit_typed_var(['foo', ['arr!', ['ptr!', ['ptr!', 'int']], 3]])
+    'int **foo[3]'
+    """
+    name, ty = pair
+    if isinstance(ty, list):
+        if ty[0] == 'ptr!':
+            return str(ty[1]) + ' *' + name
+    return str(ty) + ' ' + name
+
 
 code_sample = '''
 (module
@@ -32,6 +81,7 @@ code_sample = '''
  (fn (person_summary (p person)) void
    (printf "%s is %d years old!" p.name p.age)))
 '''
+
 
 def demo():
     print(emit_module(sexp.loads(code_sample)))
