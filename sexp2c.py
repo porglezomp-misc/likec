@@ -23,16 +23,16 @@ def emit_module(items):
         if item[0] == 'struct':
             struct = 'struct {name} {{\n{body}\n}}'.format(
                 name=item[1],
-                body='\n'.join('  ' + emit_typed_var(pair) + ';' for pair in item[2:]),
+                body='\n'.join(emit_typed_var(pair) + ';' for pair in item[2:]),
             )
             output.append(struct)
         elif item[0] == 'fn':
             print(item)
             fn = '{ret} {name}({args}) {{\n{body}\n}}'.format(
-                ret = item[2],
-                name = item[1][0],
-                args = ', '.join(emit_typed_var(pair) for pair in item[1][1:]),
-                body = '\n'.join(emit_statement(stmt) for stmt in item[3:])
+                ret=item[2],
+                name=item[1][0],
+                args=', '.join(emit_typed_var(pair) for pair in item[1][1:]),
+                body='\n'.join(emit_statement(stmt) for stmt in item[3:]),
             )
             output.append(fn)
 
@@ -42,10 +42,38 @@ def emit_module(items):
 
 
 def emit_statement(stmt):
-    return str(stmt)
+    assert isinstance(stmt, list)
+    if stmt[0] == 'let!':
+        print('let', stmt[1:])
+    elif stmt[0] == 'if':
+        output = 'if ({cond}) {{\n{code}\n}}'.format(
+            cond=emit_expr(stmt[1]),
+            code=emit_statement(stmt[2]),
+        )
+        if len(stmt) > 3:
+            output += ' else {{\n{code}\n}}'.format(
+                code=emit_statement(stmt[3]),
+            )
+        return output
+    elif stmt[0] == 'for':
+        print('for', stmt[1], stmt[2:])
+        return ''
+    elif stmt[0] == 'while':
+        print('while', stmt[1], stmt[2:])
+        return ''
+    else:
+        return emit_expr(stmt) + ';'
 
 
 def emit_expr(expr):
+    if isinstance(expr, list):
+        print(expr)
+        if expr[0] in ('+', '-', '*', '/'):
+            return '({})'.format(expr[0].join(emit_expr(e) for e in expr[1:]))
+        elif expr[0] == 'str!':
+            return '"{}"'.format(' '.join(expr[1:]))
+        else:
+            return '{}({})'.format(expr[0], ', '.join(emit_expr(e) for e in expr[1:]))
     return str(expr)
 
 
@@ -89,8 +117,15 @@ code_sample = '''
  (struct person
    (name (ptr! char))
    (age int))
- (fn (person_summary (p person)) void
-   (printf "%s is %d years old!" p.name p.age)))
+ (fn (person_summary (p (ptr! person))) void
+   (printf (str! %s is %d years old!) p->name p->age))
+ (fn (fib (n int)) int
+   (if (<= n 0)
+     (return 0)
+     (if (== n 1)
+       (return 1)
+       (return (+ (fib (- n 1))
+                  (fib (- n 2))))))))
 '''
 
 
