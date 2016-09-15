@@ -27,7 +27,6 @@ def emit_module(items):
             )
             output.append(struct)
         elif item[0] == 'fn':
-            print(item)
             fn = '{ret} {name}({args}) {{\n{body}\n}}'.format(
                 ret=item[2],
                 name=item[1][0],
@@ -41,13 +40,21 @@ def emit_module(items):
     return '\n'.join(output)
 
 
+def emit_for_first(case):
+    if case[0] == 'let!':
+        return '{} = {}'.format(emit_typed_var(case[1]), emit_expr(case[2], False))
+    return emit_expr(case, False)
+
+
 def emit_statement(stmt):
     assert isinstance(stmt, list)
     if stmt[0] == 'let!':
-        print('let', stmt[1:])
+        return '{} = {};'.format(emit_typed_var(stmt[1]), emit_expr(stmt[2], False))
+    if stmt[0] == 'set!':
+        return '{} = {};'.format(stmt[1], emit_expr(stmt[2], False))
     elif stmt[0] == 'if':
         output = 'if ({cond}) {{\n{code}\n}}'.format(
-            cond=emit_expr(stmt[1]),
+            cond=emit_expr(stmt[1], False),
             code=emit_statement(stmt[2]),
         )
         if len(stmt) > 3:
@@ -56,24 +63,43 @@ def emit_statement(stmt):
             )
         return output
     elif stmt[0] == 'for':
-        print('for', stmt[1], stmt[2:])
-        return ''
+        return 'for ({first}; {test}; {after}) {{\n{body}\n}}'.format(
+            first=emit_for_first(stmt[1][0]),
+            test=emit_expr(stmt[1][1], False),
+            after=emit_expr(stmt[1][2], False),
+            body='\n'.join(emit_statement(s) for s in stmt[2:]),
+        )
     elif stmt[0] == 'while':
         print('while', stmt[1], stmt[2:])
         return ''
+    elif stmt[0] == 'block!':
+        return '{{{items}}}'.format('\n'.join(emit_statement(s) for s in stmt[1:]))
+    elif stmt[0] == 'return':
+        return 'return {}'.format(emit_expr(stmt[1], False))
     else:
         return emit_expr(stmt) + ';'
 
 
-def emit_expr(expr):
+def emit_expr(expr, parenthesize=True):
     if isinstance(expr, list):
-        print(expr)
-        if expr[0] in ('+', '-', '*', '/'):
-            return '({})'.format(expr[0].join(emit_expr(e) for e in expr[1:]))
+        if len(expr) == 2 and expr[0] in ('+', '-', '++', '--', '~'):
+            content = expr[0] + emit_expr(expr[1])
+            if parenthesize:
+                content = '({})'.format(content)
+            return content
+        if expr[0] in ('+', '-', '*', '/', '<', '>', '<=', '>=', '==', '!=', '&&', '||'):
+            op = ' ' + expr[0] + ' '
+            content = op.join(emit_expr(e) for e in expr[1:])
+            if parenthesize:
+                content = '({})'.format(content)
+            return content
         elif expr[0] == 'str!':
             return '"{}"'.format(' '.join(expr[1:]))
         else:
-            return '{}({})'.format(expr[0], ', '.join(emit_expr(e) for e in expr[1:]))
+            return '{}({})'.format(
+                expr[0],
+                ', '.join(emit_expr(e, False) for e in expr[1:])
+            )
     return str(expr)
 
 
@@ -117,15 +143,28 @@ code_sample = '''
  (struct person
    (name (ptr! char))
    (age int))
+
  (fn (person_summary (p (ptr! person))) void
    (printf (str! %s is %d years old!) p->name p->age))
+
  (fn (fib (n int)) int
    (if (<= n 0)
      (return 0)
      (if (== n 1)
        (return 1)
        (return (+ (fib (- n 1))
-                  (fib (- n 2))))))))
+                  (fib (- n 2)))))))
+
+ (fn (fib1 (n int)) int
+   (let! (a int) 0)
+   (let! (b int) 1)
+   (for ((let! (i int) 0)
+         (< i n)
+         (++ i))
+     (let! (c int) b)
+     (set! b (+ a b))
+     (set! a c))
+   (return a)))
 '''
 
 
