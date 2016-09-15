@@ -62,14 +62,25 @@ def emit_typed_var(pair):
     'int foo'
     >>> emit_typed_var(['bar', ['ptr!', 'char']])
     'char *bar'
-
-    >> emit_typed_var(['foo', ['arr!', ['ptr!', ['ptr!', 'int']], 3]])
-    'int **foo[3]'
+    >>> emit_typed_var(['baz', ['ptr!', ['ptr!', 'double']]])
+    'double **baz'
+    >>> emit_typed_var(['qux', ['arr!', ['ptr!', ['ptr!', 'int']]]])
+    'int **qux[]'
+    >>> emit_typed_var(['quux', ['ptr!', ['ptr!', ['arr!', 'int']]]])
+    'int (**quux)[]'
+    >>> emit_typed_var(['fizz', ['ptr!', ['arr!', 3, 'int']]])
+    'int (*fizz)[3]'
     """
     name, ty = pair
     if isinstance(ty, list):
         if ty[0] == 'ptr!':
-            return str(ty[1]) + ' *' + name
+            return emit_typed_var(('*' + name, ty[1]))
+        elif ty[0] == 'arr!':
+            if name[0] == '*':
+                name = '({})'.format(name)
+            if len(ty) > 2:
+                return emit_typed_var(('{}[{}]'.format(name, ty[1]), ty[2]))
+            return emit_typed_var((name + '[]', ty[1]))
     return str(ty) + ' ' + name
 
 
