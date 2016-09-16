@@ -1,5 +1,14 @@
 import sexp
 
+def analyze_module(items):
+    assert items[0] == 'module'
+    items = items[1:]
+    struct_decls = {item[1]: item for item in items if item[0] == 'struct'}
+    fn_decls = {item[1][0]: item for item in items if item[0] == 'fn'}
+    exports = [item for item in items if item[0] == 'export']
+    return exports
+
+
 def emit_module(items):
     assert items[0] == 'module'
     items = items[1:]
@@ -136,45 +145,8 @@ def emit_typed_var(pair):
     return str(ty) + ' ' + name
 
 
-code_sample = '''
-(module
- (struct person
-   (name (ptr! char))
-   (age int))
-
- (fn (person_summary (p (ptr! person))) void
-   (printf (str! %s is %d years old!) p->name p->age))
-
- (fn (fib (n int)) int
-   (if (<= n 0)
-     (return 0)
-     (if (== n 1)
-       (return 1)
-       (return (+ (fib (- n 1))
-                  (fib (- n 2)))))))
-
- (fn (fib1 (n int)) int
-   (let! (a int) 0)
-   (let! (b int) 1)
-   (for ((let! (i int) 0)
-         (< i n)
-         (++ i))
-     (let! (c int) b)
-     (set! b (+ a b))
-     (set! a c))
-   (return a))
-
-  (fn (mainloop (running bool)) void
-    (while running
-      (set! running false)))
-
-  (fn (peano_add (a int) (b int)) int
-    (while (> a 0)
-      (-- a)
-      (++ b))
-    (return b)))
-'''
-
-
 def demo():
-    print(emit_module(sexp.loads(code_sample)))
+    with open('sample.lc', 'r') as f:
+        code = sexp.loads(f.read())
+        print(emit_module(code))
+        print(analyze_module(code))

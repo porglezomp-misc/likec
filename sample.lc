@@ -1,0 +1,39 @@
+(module
+(struct person
+  (name (ptr! char))
+  (age int))
+(export person :abstract)
+
+(fn (person_summary (p (ptr! person))) void
+  (printf (str! %s is %d years old!) p->name p->age))
+(export person_summary)
+
+(fn (fib (n int)) int
+  (if (<= n 0)
+    (return 0)
+    (if (== n 1)
+      (return 1)
+      (return (+ (fib (- n 1))
+                 (fib (- n 2)))))))
+
+(fn (fib1 (n int)) int
+  (let! (a int) 0)
+  (let! (b int) 1)
+  (for ((let! (i int) 0)
+        (< i n)
+        (++ i))
+    (let! (c int) b)
+    (set! b (+ a b))
+    (set! a c))
+  (return a))
+(export fib1 :as fib)
+
+(fn (mainloop (running bool)) void
+  (while running
+    (set! running false)))
+
+(fn (peano_add (a int) (b int)) int
+  (while (> a 0)
+    (-- a)
+    (++ b))
+  (return b)))
