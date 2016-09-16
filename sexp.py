@@ -9,7 +9,14 @@ def loads(string):
     ['+', 1, 1]
     >>> loads('(+ (* x1 x2) (* y1 y2))')
     ['+', ['*', 'x1', 'x2'], ['*', 'y1', 'y2']]
+    >>> loads('"hello world"')
+    ['(str)', 'hello world']
     """
+    # result = None
+    # result_stack = []
+    # for char in string:
+    #     pass
+
     tokens = string.replace('(', ' ( ').replace(')', ' ) ').split()
     return parse_tokens(tokens)
 
@@ -25,8 +32,12 @@ def dumps(sexp):
     '(+ 1 1)'
     >>> dumps(['+', ['*', 'x1', 'x2'], ['*', 'y1', 'y2']])
     '(+ (* x1 x2) (* y1 y2))'
+    >>> dumps(['(str)', 'hello world'])
+    '"hello world"'
     """
     if isinstance(sexp, list):
+        if sexp and sexp[0] == '(str)':
+            return '"{}"'.format(sexp[1])
         return '({})'.format(' '.join(dumps(s) for s in sexp))
     else:
         return str(sexp)

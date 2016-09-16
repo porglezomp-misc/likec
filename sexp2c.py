@@ -1,11 +1,39 @@
 import sexp
+import toposort
+
+def find_struct_depsgraph(structs):
+    deps = {}
+    def core_type(ty):
+        if isinstance(ty, list):
+            if ty[0] == 'ptr!':
+                return None
+            if ty[0] == 'arr!':
+                return core_type(ty[-1])
+        return ty
+
+    for name, struct in structs.items():
+        members = struct[2:]
+        deps[name] = {core_type(ty) for _, ty in members} - {None}
+    return deps
+
 
 def analyze_module(items):
     assert items[0] == 'module'
     items = items[1:]
     struct_decls = {item[1]: item for item in items if item[0] == 'struct'}
+    struct_deps = find_struct_depsgraph(struct_decls)
+    sorted_decls = toposort.toposort(struct_deps)
+    struct_decls = [struct_decls[sname]
+                    for sname in sorted_decls
+                    if sname in struct_decls]
+    print(struct_decls)
     fn_decls = {item[1][0]: item for item in items if item[0] == 'fn'}
-    exports = [item for item in items if item[0] == 'export']
+
+    exports = {}
+    for export in [item for item in items if item[0] == 'export']:
+        name = export[1]
+        props = {prop[0]: prop[1:] for prop in export[2:]}
+        exports[name] = {'abstract': 'abstract' in props}
     return exports
 
 

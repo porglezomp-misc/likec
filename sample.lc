@@ -1,8 +1,9 @@
 (module
 (struct person
   (name (ptr! char))
-  (age int))
-(export person :abstract)
+  (age int)
+  (address address))
+(export person (abstract))
 
 (fn (person_summary (p (ptr! person))) void
   (printf (str! %s is %d years old!) p->name p->age))
@@ -26,7 +27,7 @@
     (set! b (+ a b))
     (set! a c))
   (return a))
-(export fib1 :as fib)
+(export fib1 (as fib))
 
 (fn (mainloop (running bool)) void
   (while running
@@ -36,4 +37,8 @@
   (while (> a 0)
     (-- a)
     (++ b))
-  (return b)))
+  (return b))
+
+(struct address
+  (street (ptr! char))
+  (position int)))
