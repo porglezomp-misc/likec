@@ -1,0 +1,27 @@
+(interface
+
+(struct person
+  (name (ptr! char))
+  (age int)
+  (address address)
+  (something (ptr! thing))
+
+(fn (person_summary (p (ptr! person))) void)
+(fn (fib1 (n int)) int)
+
+(struct address
+  (street (ptr! char))
+  (position int))
+
+(struct thing)
+(struct vec3
+  (x double)
+  (y double)
+  (z double))
+(struct particle)
+(struct line
+  (begin vec3)
+  (end vec3))
+(struct particle_system
+  (particles (ptr! particle))
+  (count int)))

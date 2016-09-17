@@ -103,6 +103,20 @@ def sample():
         return sexp.loads(f.read())
 
 
+def module_interface(mod):
+    fns, structs, exports = defs = definitions(mod)
+
+    def make_export(elem):
+        name, props = elem
+        if name in fns:
+            return fns[name][:3]
+        elif name in structs:
+            if props['abstract']:
+                return ['struct', name]
+            return structs[name]
+
+    return ['interface'] + [make_export(e) for e in exports.items()]
+
 # def construct_module(mod):
 #     fns, structs, exports = defs = definitions(mod)
 #     deps = find_depsgraph(defs)
