@@ -1,4 +1,4 @@
-def generate_incoming(outgoing):
+def reverse_edges(outgoing):
     result = {}
     for node, out in outgoing.items():
         if node not in result:
@@ -10,16 +10,12 @@ def generate_incoming(outgoing):
     return result
 
 
-def extend_graph(graph):
-    for target in graph.values():
-        for val in target:
-            if val not in graph:
-                graph[val] = set()
-    return graph
+def toposort(graph, inverse=False):
+    if not inverse:
+        incoming = reverse_edges(graph)
+    else:
+        incoming = extend_graph(graph)
 
-
-def toposort(graph):
-    incoming = extend_graph(graph) #generate_incoming(graph)
     result = []
     while True:
         keep = {}
@@ -35,4 +31,14 @@ def toposort(graph):
         if not remove:
             break
         incoming = keep
+    if keep:
+        raise ValueError(keep)
     return result
+
+
+def extend_graph(graph):
+    for target in graph.values():
+        for val in target:
+            if val not in graph:
+                graph[val] = set()
+    return graph

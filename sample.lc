@@ -1,13 +1,17 @@
 (module
+
+(import bool)
+
+(export person)
 (struct person
   (name (ptr! char))
   (age int)
-  (address address))
-(export person (abstract))
+  (address address)
+  (something (ptr! thing)))
 
+(export person_summary)
 (fn (person_summary (p (ptr! person))) void
   (printf (str! %s is %d years old!) p->name p->age))
-(export person_summary)
 
 (fn (fib (n int)) int
   (if (<= n 0)
@@ -17,6 +21,7 @@
       (return (+ (fib (- n 1))
                  (fib (- n 2)))))))
 
+(export fib1)
 (fn (fib1 (n int)) int
   (let! (a int) 0)
   (let! (b int) 1)
@@ -27,7 +32,6 @@
     (set! b (+ a b))
     (set! a c))
   (return a))
-(export fib1 (as fib))
 
 (fn (mainloop (running bool)) void
   (while running
@@ -39,6 +43,33 @@
     (++ b))
   (return b))
 
+(export address)
 (struct address
   (street (ptr! char))
-  (position int)))
+  (position int))
+
+(export thing (abstract))
+(struct thing
+  (value int))
+
+(export vec3)
+(struct vec3
+  (x double)
+  (y double)
+  (z double))
+
+(export particle (abstract))
+(struct particle
+  (pos vec3)
+  (vel vec3)
+  (mass double))
+
+(export line)
+(struct line
+  (begin vec3)
+  (end vec3))
+
+(export particle_system)
+(struct particle_system
+  (particles (ptr! particle))
+  (count int)))
